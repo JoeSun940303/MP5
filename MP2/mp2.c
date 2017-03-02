@@ -32,39 +32,15 @@
     LIST_HEAD(mylist);
 
 
-    static void update_cpu_time (void){
-	    int flag;
-	    unsigned long cpu_time=0;
-        struct my_list *tmp;
-        struct list_head *q;
-        struct list_head *list_pos;
-        //avoid the different processes to change the list at the same time
-        mutex_lock(&process_lock);
-        //printk(KERN_ALERT "ready to update CPU time");
-        //transverse all the list node and then update the cup_time
-        list_for_each_safe(list_pos,q, &(mylist)){
-                tmp= list_entry(list_pos, struct my_list, list);
-		        //flag = get_cpu_use(tmp->pid,&cpu_time);
+    static void wake_up_scheduler (void){
+        
+	        }
 
-		        if(flag<0){
-		            list_del(list_pos);
-		            kfree(tmp);
-		        }
-                //transform the cpu time from tricks to seconds
-                //tmp->cpu_time =jiffies_to_msecs( cpu_time)/1000;
-		        cpu_time =0;
-        }
-        //printk(KERN_INFO "CPU time updated, can be shown on next cat operation");
-        mutex_unlock(&process_lock);
-        return;
-    }
-DECLARE_WORK(myWork, update_cpu_time);
+
+
     //this is the work function which will put the work function into the workqueue
+    DECLARE_WORK(myWork, wake_up_scheduler);
     void work_function(void){
-   // struct work_struct myWork;//=kmalloc(sizeof(struct work_struct), GFP_ATOMIC);
-    
-//	    if(!myWork)
-//		    return;
         queue_work(wq, &myWork);
     }
 
@@ -115,7 +91,7 @@ DECLARE_WORK(myWork, update_cpu_time);
 
         struct my_list *tmp;
         struct list_head *list_pos;
-	struct list_head * q;
+        struct list_head * q;
         int bytes=0;
         char * buf= (char *) kmalloc(PAGE_SIZE*sizeof(char),GFP_KERNEL);
 
@@ -144,6 +120,17 @@ DECLARE_WORK(myWork, update_cpu_time);
 
     }
 
+    void my_register(){
+        printk(KERN_INFO "my register is called");
+    }
+
+    void my_yield(){
+    printk(KERN_INFO "my yield is called");
+    }
+
+    void my_deregister(){
+    printk(KERN_INFO "my deregister is called");
+    }
 
     //The write call backfunction, which will take the pid in the buffer and put it into the list
     ssize_t write_callback(struct file *file, const char * buffer, size_t count, loff_t *pos){
@@ -155,17 +142,22 @@ DECLARE_WORK(myWork, update_cpu_time);
         tem_buf[count]=0;
 
         //printk(KERN_INFO "The pid is received");
-        if(kstrtoint(tem_buf,10,&pid)!=0){
-                printk(KERN_ALERT "Invalid process id \n");
-                return -EINVAL;
+        swithc(tem_buf[0]){
+        case 'R' :
+            {
+                my_register();
+            }
+        case 'Y' :
+            {
+                my_yield();
+            }
+        case 'D' :
+            {
+                my_deregister();
+            }
         }
-
-        printk(KERN_INFO "Valid pid");
-
-        mutex_lock(&process_lock);
-        add_pid_to_list(pid);
-        mutex_unlock(&process_lock);
-
+        
+        
         kfree(tem_buf);
         return count;
     }
@@ -197,10 +189,10 @@ DECLARE_WORK(myWork, update_cpu_time);
 
 
     // mp1_init - Called when module is loaded
-    int __init mp1_init(void)
+    int __init mp2_init(void)
     {
         #ifdef DEBUG
-            printk(KERN_EMERG "MP1 MODULE LOADING\n");
+            printk(KERN_EMERG "MP2 MODULE LOADING\n");
         #endif
         // Insert your code here ...
 
@@ -224,7 +216,7 @@ DECLARE_WORK(myWork, update_cpu_time);
         }
         printk(KERN_INFO "Create /proc/%s/%s\n", USER_ROOT_DIR, USER_ENTRY1);
 
-        wq=create_workqueue("MP1_WORKQUEUE");
+        wq=create_workqueue("MP2_WORKQUEUE");
 	    if(!wq) {
 	        printk(KERN_ALERT "workqueue creation failed, please check");
 	        return -1;
@@ -236,17 +228,17 @@ DECLARE_WORK(myWork, update_cpu_time);
         mod_timer(&my_timer, jiffies+msecs_to_jiffies(5000));
 
 
-        printk(KERN_ALERT "MP1 MODULE LOADED\n");
+        printk(KERN_ALERT "MP2 MODULE LOADED\n");
         return 0;
 
     }
 
     // mp1_exit - Called when module is unloaded
-    void __exit mp1_exit(void)
+    void __exit mp2_exit(void)
     {
 	    int ret;
         #ifdef DEBUG
-            printk(KERN_ALERT "MP1 MODULE UNLOADING\n");
+            printk(KERN_ALERT "MP2 MODULE UNLOADING\n");
         #endif
         // Insert your code here ...
         // Remove all entries
@@ -264,5 +256,5 @@ DECLARE_WORK(myWork, update_cpu_time);
     }
     
     // Register init and exit funtions
-    module_init(mp1_init);
-    module_exit(mp1_exit);
+    module_init(mp2_init);
+    module_exit(mp2_exit);
