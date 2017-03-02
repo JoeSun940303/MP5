@@ -16,15 +16,25 @@ void user_registration()
 {
 	pid_t pid = getpid();
 	char* status = NULL;
-	long int n =15000;
+	//long int n =15000;
 
-	printf("The pid is %d \n",pid);
-	if(asprintf(&status, "sudo echo %d >/proc/mp1/status", pid )<0){
+	//printf("The pid is %d \n",pid);
+	if(asprintf(&status, "sudo echo %d >/proc/mp1/status", "R" )<0){
 		fputs("Fail to register", stderr);
 		return;
 	}
+    
+    if(asprintf(&status, "sudo echo %d >/proc/mp1/status", "Y" )<0){
+        fputs("Fail to register", stderr);
+        return;
+    }
+    
+    if(asprintf(&status, "sudo echo %d >/proc/mp1/status", "D" )<0){
+        fputs("Fail to register", stderr);
+        return;
+    }
 
-	if(system(status)<0) {
+	/*if(system(status)<0) {
 		fputs( "Fail to execute",stderr);
 		return;
 	}
@@ -35,7 +45,7 @@ void user_registration()
 //	printf("The factorial of n is %ld \n", res);
 	printf("The %d call the cat: \n",pid);	
 	system ("cat /proc/mp1/status"); // Print out the recorded time and pid in status
-	sleep(1);
+	sleep(1);*/
 	return; 
 
 }
